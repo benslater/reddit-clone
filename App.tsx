@@ -14,16 +14,19 @@ import {
   SafeAreaView,
   View,
   Text,
-  Button,
   Image,
   Dimensions,
   FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
-
 import base64 from 'base-64';
+
 import { password, username, basicAuthPair } from './credentials';
 
 declare const global: { HermesInternal: null | {} };
+
+const userIcon = require('./assets/icons/png/24/basic/user.png');
 
 const deviceWidth = Dimensions.get('screen').width;
 
@@ -33,6 +36,7 @@ const App = () => {
     posts: any[];
     before: string;
     after: string;
+    count: number;
   } | null>(null);
 
   useEffect(() => {
@@ -53,9 +57,15 @@ const App = () => {
     }
   }, [accessToken]);
 
+  useEffect(() => {
+    if (accessToken && !postData) {
+      getNextItems();
+    }
+  });
+
   const getNextItems = async () => {
     const res = await fetch(
-      `https://oauth.reddit.com/r/funny/hot?g=gb&after=${postData?.after}`,
+      `https://oauth.reddit.com/r/funny/hot?g=gb&raw_json=1&after=${postData?.after}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -68,29 +78,114 @@ const App = () => {
     } = await res.json();
 
     setPostData({
-      posts: [
-        ...(postData?.posts ?? []),
-        ...children.filter((child: any) => child.data.post_hint === 'image'),
-      ],
+      posts: [...(postData?.posts ?? []), ...children],
       before,
       after,
+      count: postData?.count + children.length ?? 0,
     });
   };
 
+  if (!accessToken) {
+    // TODO: Simple solution, replace with something Lottie-based
+    return <ActivityIndicator style={{ flex: 1 }} />;
+  }
+
+  // TODO: Create stylesheet and import styles
+  // TODO: Componentise the floating views. Allow custom style props but provide default background/borderRadius/padding etc
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#913993' }}>
       <View style={{ flex: 1 }}>
-        <View style={{ flex: 1, backgroundColor: 'skyblue' }}>
-          <Button title="Click to fetch /r/funny" onPress={getNextItems} />
-          <Text>Token: {accessToken || 'fetching...'}</Text>
-        </View>
-        <View style={{ flex: 4, backgroundColor: 'steelblue' }}>
+        <View style={{ flex: 1 }}>
           <FlatList
-            style={{ backgroundColor: 'pink' }}
-            data={postData?.posts}
-            renderItem={({ item }) => (
+            data={postData?.posts.filter(
+              (child: any) => child.data.post_hint === 'image',
+            )}
+            renderItem={({
+              item: {
+                data: { url: uri, title },
+              },
+            }) => (
               <>
                 <View style={{ position: 'relative', width: deviceWidth }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      paddingTop: 20,
+                      paddingRight: 20,
+                      paddingBottom: 0,
+                      paddingLeft: 20,
+                      zIndex: 100,
+                    }}>
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: '#F8F8F8',
+                        opacity: 0.4,
+                        height: 50,
+                        width: 50,
+                        shadowColor: '#000',
+                        shadowOffset: {
+                          width: 0,
+                          height: 1,
+                        },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 1.41,
+                        elevation: 2,
+                        borderRadius: 5,
+                        padding: 10,
+                      }}>
+                      <Image
+                        style={{ height: 30, width: 30 }}
+                        source={userIcon}
+                      />
+                    </TouchableOpacity>
+                    <View
+                      style={{
+                        backgroundColor: '#F8F8F8',
+                        opacity: 0.4,
+                        maxHeight: 100,
+                        maxWidth: '50%',
+                        shadowColor: '#000',
+                        shadowOffset: {
+                          width: 0,
+                          height: 1,
+                        },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 1.41,
+                        elevation: 2,
+                        borderRadius: 5,
+                        padding: 10,
+                        justifyContent: 'center',
+                      }}>
+                      <Text
+                        style={{
+                          fontFamily: 'Actor',
+                        }}>
+                        {title}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: '#F8F8F8',
+                        opacity: 0.4,
+                        height: 50,
+                        width: 50,
+                        shadowColor: '#000',
+                        shadowOffset: {
+                          width: 0,
+                          height: 1,
+                        },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 1.41,
+                        elevation: 2,
+                        borderRadius: 5,
+                        padding: 10,
+                      }}>
+                      <Text style={{ fontSize: 24, textAlign: 'center' }}>
+                        /r/
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                   <Image
                     resizeMode="contain"
                     style={{
@@ -100,14 +195,14 @@ const App = () => {
                       bottom: 0,
                       left: 0,
                     }}
-                    source={{ uri: item.data.url }}
+                    source={{ uri }}
                   />
                 </View>
               </>
             )}
             onEndReached={() => getNextItems()}
             onEndReachedThreshold={0.5}
-            keyExtractor={(item) => item.name}
+            keyExtractor={(_, index) => `${index}`}
             horizontal
             pagingEnabled
           />
