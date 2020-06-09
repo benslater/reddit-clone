@@ -1,17 +1,24 @@
 import React from 'react';
-import { View, ViewProps } from 'react-native';
+import { View, ViewProps, Animated } from 'react-native';
 
 import styles from './styles';
 
 interface FloatingViewProps extends ViewProps {
-  children: any;
+  children?: any;
+  animated?: boolean;
 }
 
-const FloatingView = ({ children, style, ...rest }: FloatingViewProps) => {
+const FloatingView = ({
+  children,
+  style,
+  animated,
+  ...rest
+}: FloatingViewProps) => {
+  const Component = animated ? Animated.View : View;
   return (
-    <View style={[styles.view, style]} {...rest}>
+    <Component style={[styles.view, style]} {...rest}>
       {children}
-    </View>
+    </Component>
   );
 };
 

@@ -1,7 +1,7 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { purple } from 'constants/styles';
 
-const deviceWidth = Dimensions.get('screen').width;
+const { width: deviceWidth } = Dimensions.get('screen');
 
 export default StyleSheet.create({
   fullscreen: {
@@ -26,13 +26,5 @@ export default StyleSheet.create({
     maxHeight: 100,
   },
   mainImage: { ...StyleSheet.absoluteFillObject },
-  subredditList: {
-    position: 'absolute',
-    top: 90,
-    left: 20,
-    right: 20,
-  },
-  hiddenList: {
-    display: 'none',
-  },
+  subredditDropdownText: { fontSize: 24, textAlign: 'center' },
 });

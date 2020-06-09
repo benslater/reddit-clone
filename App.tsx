@@ -16,7 +16,6 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
-  ScrollView,
 } from 'react-native';
 import base64 from 'base-64';
 
@@ -31,7 +30,8 @@ import userIcon from 'assets/icons/png/24/basic/user.png';
 
 declare const global: { HermesInternal: null | {} };
 
-import styles from 'styles';
+import styles from './styles';
+import SubredditSelector from 'components/SubredditSelector';
 
 const App = () => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -42,6 +42,12 @@ const App = () => {
     count: number;
   } | null>(null);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [subredditData, setSubredditData] = useState<{
+    subreddits: any[];
+    before: string;
+    after: string;
+    count: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!accessToken) {
@@ -62,10 +68,34 @@ const App = () => {
   }, [accessToken]);
 
   useEffect(() => {
-    if (accessToken && !postData) {
-      getNextItems();
+    if (accessToken) {
+      if (!subredditData) {
+        getSubreddits();
+      }
+      if (!postData) {
+        getNextItems();
+      }
     }
   });
+
+  const getSubreddits = async () => {
+    const res = await fetch('https://oauth.reddit.com/subreddits/default', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    // TODO: Type def the response, particularly posts
+    const {
+      data: { children, before, after },
+    } = await res.json();
+
+    setSubredditData({
+      subreddits: [...(subredditData?.subreddits ?? []), ...children],
+      before,
+      after,
+      count: subredditData?.count + children.length ?? 0,
+    });
+  };
 
   const getNextItems = async () => {
     const res = await fetch(
@@ -118,11 +148,12 @@ const App = () => {
                     <FloatingView style={styles.titleContainer}>
                       <Text>{title}</Text>
                     </FloatingView>
-                    <Dropdown
-                      onPress={() => {
-                        setIsDropdownVisible(!isDropdownVisible);
-                      }}
-                    />
+                    <TouchableOpacity
+                      onPress={() => setIsDropdownVisible(!isDropdownVisible)}>
+                      <FloatingView>
+                        <Text style={styles.subredditDropdownText}>/r/</Text>
+                      </FloatingView>
+                    </TouchableOpacity>
                   </View>
                   <Image
                     style={styles.mainImage}
@@ -138,16 +169,10 @@ const App = () => {
             horizontal
             pagingEnabled
           />
-          <FloatingView
-            style={[
-              isDropdownVisible ? styles.subredditList : styles.hiddenList,
-            ]}>
-            <ScrollView>
-              <Text>One</Text>
-              <Text>Two</Text>
-              <Text>Three</Text>
-            </ScrollView>
-          </FloatingView>
+          <SubredditSelector
+            visible={isDropdownVisible}
+            subreddits={subredditData?.subreddits}
+          />
         </View>
       </View>
     </SafeAreaView>
