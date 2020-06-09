@@ -29,6 +29,7 @@ const SubredditSelector = ({
         style={styles.innerList}
         data={[
           { data: { display_name_prefixed: 'Front Page', url: '/' } },
+          { data: { display_name_prefixed: 'all', url: '/r/all/' } },
           ...(subreddits ?? []),
         ]}
         renderItem={({ item, index }) => {
