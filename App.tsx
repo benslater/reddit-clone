@@ -50,9 +50,9 @@ const App = () => {
     before?: string;
     after?: string;
     count?: number;
-  } | null>(initialSubredditsState);
+  }>(initialSubredditsState);
   const [visiblePost, setVisiblePost] = useState<any | null>(null);
-  const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string | null>(
+  const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string>(
     '/r/all/',
   );
 
@@ -237,6 +237,7 @@ const App = () => {
           <SubredditSelector
             visible={isDropdownVisible}
             subreddits={subredditData?.subreddits}
+            selectedSubreddit={currentSubredditUrl}
             onSelect={(subreddit) => {
               setVisiblePost(null);
               setPostData(initialPostDataState);

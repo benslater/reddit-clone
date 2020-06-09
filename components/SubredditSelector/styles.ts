@@ -1,6 +1,6 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
-import { offWhite, black } from 'constants/styles';
+import { offWhite, black, grey } from 'constants/styles';
 
 const { height: deviceHeight } = Dimensions.get('screen');
 
@@ -35,4 +35,5 @@ export default StyleSheet.create({
   innerList: { width: '100%' },
   textContainer: { paddingVertical: 10 },
   separator: { height: 1, backgroundColor: black },
+  highlighted: { backgroundColor: grey },
 });

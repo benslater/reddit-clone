@@ -9,12 +9,14 @@ import styles from './styles';
 interface SubredditSelectorProps {
   visible: boolean;
   subreddits: any[] | undefined | null;
+  selectedSubreddit?: string;
   onSelect?: (subreddit: any) => void;
 }
 
 const SubredditSelector = ({
   visible = false,
   subreddits = [],
+  selectedSubreddit,
   onSelect,
 }: SubredditSelectorProps) => {
   return (
@@ -34,11 +36,15 @@ const SubredditSelector = ({
         ]}
         renderItem={({ item, index }) => {
           const {
-            data: { display_name_prefixed },
+            data: { display_name_prefixed, url },
           } = item;
           return (
             <TouchableOpacity key={`${index}`} onPress={() => onSelect?.(item)}>
-              <View style={styles.textContainer}>
+              <View
+                style={[
+                  styles.textContainer,
+                  selectedSubreddit === url && styles.highlighted,
+                ]}>
                 <Text>{display_name_prefixed}</Text>
               </View>
             </TouchableOpacity>
