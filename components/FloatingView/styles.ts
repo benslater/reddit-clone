@@ -5,6 +5,7 @@ import { offWhite, black } from 'constants/styles';
 export default StyleSheet.create({
   view: {
     backgroundColor: offWhite,
+    opacity: 0.8,
     shadowColor: black,
     shadowOffset: {
       width: 0,

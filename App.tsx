@@ -8,7 +8,7 @@
  * @format
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   SafeAreaView,
   View,
@@ -21,7 +21,6 @@ import base64 from 'base-64';
 
 import Text from 'components/Text';
 import FloatingView from 'components/FloatingView';
-import Dropdown from 'components/Dropdown';
 
 import { password, username, basicAuthPair } from './credentials';
 
@@ -48,6 +47,14 @@ const App = () => {
     after: string;
     count: number;
   } | null>(null);
+  const [visiblePost, setVisiblePost] = useState<any | null>(null);
+
+  const viewabilityConfig = useRef({
+    viewAreaCoveragePercentThreshold: 100,
+  });
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    setVisiblePost(viewableItems[0]?.item ?? null);
+  });
 
   useEffect(() => {
     if (!accessToken) {
@@ -128,33 +135,38 @@ const App = () => {
     <SafeAreaView style={styles.fullscreen}>
       <View style={[styles.fullscreen, styles.purpleBackground]}>
         <View style={styles.fullscreen}>
+          <View style={styles.headerContainer}>
+            <TouchableOpacity>
+              <FloatingView>
+                <Image style={styles.icon} source={userIcon} />
+              </FloatingView>
+            </TouchableOpacity>
+            {/* TODO: This fundamentally doesn't look good. Redesign. */}
+            {visiblePost && (
+              <FloatingView style={styles.titleContainer}>
+                <Text>{visiblePost.data.title}</Text>
+              </FloatingView>
+            )}
+            <TouchableOpacity
+              onPress={() => setIsDropdownVisible(!isDropdownVisible)}>
+              <FloatingView>
+                <Text style={styles.subredditDropdownText}>/r/</Text>
+              </FloatingView>
+            </TouchableOpacity>
+          </View>
           <FlatList
+            horizontal
+            pagingEnabled
             data={postData?.posts.filter(
               (child: any) => child.data.post_hint === 'image',
             )}
             renderItem={({
               item: {
-                data: { url: uri, title },
+                data: { url: uri },
               },
             }) => (
               <>
                 <View style={styles.contentContainer}>
-                  <View style={styles.headerContainer}>
-                    <TouchableOpacity>
-                      <FloatingView>
-                        <Image style={styles.icon} source={userIcon} />
-                      </FloatingView>
-                    </TouchableOpacity>
-                    <FloatingView style={styles.titleContainer}>
-                      <Text>{title}</Text>
-                    </FloatingView>
-                    <TouchableOpacity
-                      onPress={() => setIsDropdownVisible(!isDropdownVisible)}>
-                      <FloatingView>
-                        <Text style={styles.subredditDropdownText}>/r/</Text>
-                      </FloatingView>
-                    </TouchableOpacity>
-                  </View>
                   <Image
                     style={styles.mainImage}
                     source={{ uri }}
@@ -166,8 +178,8 @@ const App = () => {
             onEndReached={() => getNextItems()}
             onEndReachedThreshold={0.5}
             keyExtractor={(_, index) => `${index}`}
-            horizontal
-            pagingEnabled
+            onViewableItemsChanged={onViewableItemsChanged.current}
+            viewabilityConfig={viewabilityConfig.current}
           />
           <SubredditSelector
             visible={isDropdownVisible}

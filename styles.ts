@@ -12,6 +12,8 @@ export default StyleSheet.create({
   },
   contentContainer: { position: 'relative', width: deviceWidth },
   headerContainer: {
+    position: 'absolute',
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: 20,
