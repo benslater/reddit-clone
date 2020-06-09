@@ -165,6 +165,9 @@ const App = () => {
     <SafeAreaView style={styles.fullscreen}>
       <View style={[styles.fullscreen, styles.purpleBackground]}>
         <View style={styles.fullscreen}>
+          {/* TODO: Break these out - this isn't actually a header.
+           *  Have all the floating buttons in an ActionsOverlay component?
+           */}
           <View style={styles.headerContainer}>
             <TouchableOpacity>
               <FloatingView>
