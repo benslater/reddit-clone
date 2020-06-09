@@ -9,11 +9,13 @@ import styles from './styles';
 interface SubredditSelectorProps {
   visible: boolean;
   subreddits: any[] | undefined | null;
+  onSelect?: (subreddit: any) => void;
 }
 
 const SubredditSelector = ({
   visible = false,
   subreddits = [],
+  onSelect,
 }: SubredditSelectorProps) => {
   return (
     <FloatingView
@@ -26,14 +28,12 @@ const SubredditSelector = ({
       <FlatList
         style={styles.innerList}
         data={subreddits}
-        renderItem={({
-          item: {
+        renderItem={({ item, index }) => {
+          const {
             data: { display_name_prefixed },
-          },
-          index,
-        }) => {
+          } = item;
           return (
-            <TouchableOpacity key={`${index}`}>
+            <TouchableOpacity key={`${index}`} onPress={() => onSelect?.(item)}>
               <View style={styles.textContainer}>
                 <Text>{display_name_prefixed}</Text>
               </View>

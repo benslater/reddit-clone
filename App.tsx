@@ -48,6 +48,9 @@ const App = () => {
     count: number;
   } | null>(null);
   const [visiblePost, setVisiblePost] = useState<any | null>(null);
+  const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string | null>(
+    '/r/all/',
+  );
 
   const viewabilityConfig = useRef({
     viewAreaCoveragePercentThreshold: 100,
@@ -75,38 +78,65 @@ const App = () => {
   }, [accessToken]);
 
   useEffect(() => {
-    if (accessToken) {
-      if (!subredditData) {
-        getSubreddits();
+    const getSubredditContent = async () => {
+      if (!currentSubredditUrl || !accessToken) {
+        return;
       }
-      if (!postData) {
-        getNextItems();
+
+      const res = await fetch(
+        `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+      // TODO: Type def the response, particularly posts
+      const {
+        data: { children, before, after },
+      } = await res.json();
+
+      setPostData((currentPostData) => ({
+        posts: [...(currentPostData?.posts ?? []), ...children],
+        before,
+        after,
+        count: currentPostData?.count + children.length ?? 0,
+      }));
+    };
+
+    getSubredditContent();
+  }, [currentSubredditUrl, accessToken]);
+
+  useEffect(() => {
+    const getSubreddits = async () => {
+      if (!accessToken) {
+        return;
       }
-    }
-  });
+      const res = await fetch('https://oauth.reddit.com/subreddits/default', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      // TODO: Type def the response, particularly posts
+      const {
+        data: { children, before, after },
+      } = await res.json();
 
-  const getSubreddits = async () => {
-    const res = await fetch('https://oauth.reddit.com/subreddits/default', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    // TODO: Type def the response, particularly posts
-    const {
-      data: { children, before, after },
-    } = await res.json();
+      setSubredditData((currentSubredditData) => ({
+        subreddits: [...(currentSubredditData?.subreddits ?? []), ...children],
+        before,
+        after,
+        count: currentSubredditData?.count + children.length ?? 0,
+      }));
+    };
 
-    setSubredditData({
-      subreddits: [...(subredditData?.subreddits ?? []), ...children],
-      before,
-      after,
-      count: subredditData?.count + children.length ?? 0,
-    });
-  };
+    getSubreddits();
+  }, [accessToken]);
 
+  // TODO: One of the effect hooks sort of duplicates this. Could probably be parameterized.
   const getNextItems = async () => {
     const res = await fetch(
-      `https://oauth.reddit.com/r/funny/hot?g=gb&raw_json=1&after=${postData?.after}`,
+      `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1&after=${postData?.after}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -118,12 +148,12 @@ const App = () => {
       data: { children, before, after },
     } = await res.json();
 
-    setPostData({
-      posts: [...(postData?.posts ?? []), ...children],
+    setPostData((currentPostData) => ({
+      posts: [...(currentPostData?.posts ?? []), ...children],
       before,
       after,
-      count: postData?.count + children.length ?? 0,
-    });
+      count: currentPostData?.count + children.length ?? 0,
+    }));
   };
 
   if (!accessToken) {
@@ -141,7 +171,7 @@ const App = () => {
                 <Image style={styles.icon} source={userIcon} />
               </FloatingView>
             </TouchableOpacity>
-            {/* TODO: This fundamentally doesn't look good. Redesign. */}
+            {/* TODO: This fundamentally doesn't look good. Redesign. Maybe allow tap to expand? */}
             {visiblePost && (
               <FloatingView style={styles.titleContainer}>
                 <Text>{visiblePost.data.title}</Text>
@@ -184,6 +214,12 @@ const App = () => {
           <SubredditSelector
             visible={isDropdownVisible}
             subreddits={subredditData?.subreddits}
+            onSelect={(subreddit) => {
+              setVisiblePost(null);
+              setPostData(null);
+              setCurrentSubredditUrl(subreddit.data.url);
+              setIsDropdownVisible(false);
+            }}
           />
         </View>
       </View>
