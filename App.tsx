@@ -62,6 +62,7 @@ const App = () => {
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: any }) => {
       setVisiblePost(viewableItems[0]?.item ?? null);
+      setIsDropdownVisible(false);
     },
   );
 
@@ -109,6 +110,9 @@ const App = () => {
         after,
         count: currentPostData?.count + children.length ?? 0,
       }));
+      // TODO: This solves this issue of title being absent on subreddit change, but feels a bit too imperative.
+      // Have another look into the FlatList API.
+      setVisiblePost(children[0]);
     };
 
     getSubredditContent();

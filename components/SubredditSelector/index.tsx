@@ -28,7 +28,7 @@ const SubredditSelector = ({
       <FlatList
         style={styles.innerList}
         data={[
-          { data: { display_name_prefixed: 'all', url: '/' } },
+          { data: { display_name_prefixed: 'Front Page', url: '/' } },
           ...(subreddits ?? []),
         ]}
         renderItem={({ item, index }) => {
