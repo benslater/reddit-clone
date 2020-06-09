@@ -21,32 +21,36 @@ import base64 from 'base-64';
 
 import Text from 'components/Text';
 import FloatingView from 'components/FloatingView';
+import SubredditSelector from 'components/SubredditSelector';
 
 import { password, username, basicAuthPair } from './credentials';
 
 // TODO: Fix linting - thinks this cannot be resolved
 import userIcon from 'assets/icons/png/24/basic/user.png';
 
+import styles from './styles';
+
 declare const global: { HermesInternal: null | {} };
 
-import styles from './styles';
-import SubredditSelector from 'components/SubredditSelector';
+const initialPostDataState = { posts: [] };
+const initialSubredditsState = { subreddits: [] };
 
 const App = () => {
+  // TODO: Getting unweildy, redux soon.
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [postData, setPostData] = useState<{
     posts: any[];
-    before: string;
-    after: string;
-    count: number;
-  } | null>(null);
+    before?: string;
+    after?: string;
+    count?: number;
+  }>(initialPostDataState);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [subredditData, setSubredditData] = useState<{
     subreddits: any[];
-    before: string;
-    after: string;
-    count: number;
-  } | null>(null);
+    before?: string;
+    after?: string;
+    count?: number;
+  } | null>(initialSubredditsState);
   const [visiblePost, setVisiblePost] = useState<any | null>(null);
   const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string | null>(
     '/r/all/',
@@ -55,9 +59,11 @@ const App = () => {
   const viewabilityConfig = useRef({
     viewAreaCoveragePercentThreshold: 100,
   });
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    setVisiblePost(viewableItems[0]?.item ?? null);
-  });
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: any }) => {
+      setVisiblePost(viewableItems[0]?.item ?? null);
+    },
+  );
 
   useEffect(() => {
     if (!accessToken) {
@@ -91,6 +97,7 @@ const App = () => {
           },
         },
       );
+      // TODO: These responses aren't super pleasant to work with. Make adapter.
       // TODO: Type def the response, particularly posts
       const {
         data: { children, before, after },
@@ -117,7 +124,8 @@ const App = () => {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      // TODO: Type def the response, particularly posts
+      // TODO: These responses aren't super pleasant to work with. Make adapter.
+      // TODO: Type def the response, particularly subreddits
       const {
         data: { children, before, after },
       } = await res.json();
@@ -190,24 +198,32 @@ const App = () => {
           <FlatList
             horizontal
             pagingEnabled
-            data={postData?.posts.filter(
-              (child: any) => child.data.post_hint === 'image',
-            )}
+            data={postData?.posts}
             renderItem={({
               item: {
-                data: { url: uri },
+                data: { url: uri, post_hint },
               },
-            }) => (
-              <>
-                <View style={styles.contentContainer}>
-                  <Image
-                    style={styles.mainImage}
-                    source={{ uri }}
-                    resizeMode="contain"
-                  />
-                </View>
-              </>
-            )}
+            }) => {
+              if (post_hint === 'image') {
+                return (
+                  <>
+                    <View style={styles.contentContainer}>
+                      <Image
+                        style={styles.mainImage}
+                        source={{ uri }}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  </>
+                );
+              } else {
+                return (
+                  <View style={styles.contentContainer}>
+                    <Text>Not implemented</Text>
+                  </View>
+                );
+              }
+            }}
             onEndReached={() => getNextItems()}
             onEndReachedThreshold={0.5}
             keyExtractor={(_, index) => `${index}`}
@@ -219,7 +235,7 @@ const App = () => {
             subreddits={subredditData?.subreddits}
             onSelect={(subreddit) => {
               setVisiblePost(null);
-              setPostData(null);
+              setPostData(initialPostDataState);
               setCurrentSubredditUrl(subreddit.data.url);
               setIsDropdownVisible(false);
             }}

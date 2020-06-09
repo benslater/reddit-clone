@@ -27,7 +27,10 @@ const SubredditSelector = ({
       <View style={styles.dropdownArrow} />
       <FlatList
         style={styles.innerList}
-        data={subreddits}
+        data={[
+          { data: { display_name_prefixed: 'all', url: '/' } },
+          ...(subreddits ?? []),
+        ]}
         renderItem={({ item, index }) => {
           const {
             data: { display_name_prefixed },
