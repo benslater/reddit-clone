@@ -31,21 +31,28 @@ import userIcon from 'assets/icons/png/24/basic/user.png';
 import commentTextIcon from 'assets/icons/png/24/chatting/comment-text.png';
 
 import styles from './styles';
+import { RedditListingResponse, RedditPost } from 'types';
 
 declare const global: { HermesInternal: null | {} };
 
-const initialPostDataState = { posts: [] };
+const initialPostDataState: {
+  listing: RedditListingResponse;
+  count: number;
+} = {
+  listing: {
+    kind: null,
+    data: null,
+  },
+  count: 0,
+};
 const initialSubredditsState = { subreddits: [] };
 
 const App = () => {
   // TODO: Getting unweildy, redux soon.
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [postData, setPostData] = useState<{
-    posts: any[];
-    before?: string;
-    after?: string;
-    count?: number;
-  }>(initialPostDataState);
+  const [postData, setPostData] = useState<typeof initialPostDataState>(
+    initialPostDataState,
+  );
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [isCommentDrawerVisible, setIsCommentDrawerVisible] = useState(false);
   const [subredditData, setSubredditData] = useState<{
@@ -54,7 +61,7 @@ const App = () => {
     after?: string;
     count?: number;
   }>(initialSubredditsState);
-  const [visiblePost, setVisiblePost] = useState<any | null>(null);
+  const [visiblePost, setVisiblePost] = useState<RedditPost | null>(null);
   const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string>('/');
 
   const viewabilityConfig = useRef({
@@ -91,29 +98,31 @@ const App = () => {
         return;
       }
 
-      const res = await fetch(
-        `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
+      const fetchSubredditContent = async (): Promise<
+        RedditListingResponse
+      > => {
+        const res = await fetch(
+          `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
           },
-        },
-      );
-      // TODO: These responses aren't super pleasant to work with. Make adapter.
-      // TODO: Type def the response, particularly posts
-      const {
-        data: { children, before, after },
-      } = await res.json();
+        );
+        // TODO: These responses aren't super pleasant to work with. Make adapter.
+        return await res.json();
+      };
+      const listing = await fetchSubredditContent();
+
+      console.log(listing);
 
       setPostData((currentPostData) => ({
-        posts: [...(currentPostData?.posts ?? []), ...children],
-        before,
-        after,
-        count: currentPostData?.count + children.length ?? 0,
+        listing,
+        count: currentPostData?.count + (listing.data?.children.length ?? 0),
       }));
       // TODO: This solves this issue of title being absent on subreddit change, but feels a bit too imperative.
       // Have another look into the FlatList API.
-      setVisiblePost(children[0]);
+      setVisiblePost(listing.data?.children[0] ?? null);
     };
 
     getSubredditContent();
@@ -151,24 +160,28 @@ const App = () => {
 
   // TODO: One of the effect hooks sort of duplicates this. Could probably be parameterized.
   const getNextItems = async () => {
-    const res = await fetch(
-      `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1&after=${postData?.after}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+    const fetchSubredditContent = async (): Promise<RedditListingResponse> => {
+      const res = await fetch(
+        `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         },
-      },
-    );
-    // TODO: Type def the response, particularly posts
-    const {
-      data: { children, before, after },
-    } = await res.json();
+      );
+      // TODO: These responses aren't super pleasant to work with. Make adapter.
+      return await res.json();
+    };
+    const { data: fetchedData } = await fetchSubredditContent();
 
     setPostData((currentPostData) => ({
-      posts: [...(currentPostData?.posts ?? []), ...children],
-      before,
-      after,
-      count: currentPostData?.count + children.length ?? 0,
+      listing: {
+        ...currentPostData.listing,
+        data: currentPostData.listing.data
+          ? { ...currentPostData.listing.data, ...fetchedData }
+          : null,
+      },
+      count: 0,
     }));
   };
 
@@ -206,19 +219,24 @@ const App = () => {
           <FlatList
             horizontal
             pagingEnabled
-            data={postData?.posts}
+            data={postData?.listing.data?.children}
             renderItem={({
               item: {
-                data: { url: uri, post_hint },
+                data: { url },
               },
             }) => {
-              if (post_hint === 'image') {
+              if (
+                url &&
+                ['.jpg', '.gif', '.png', '.jpeg'].some((ext) =>
+                  url.includes(ext),
+                )
+              ) {
                 return (
                   <>
                     <View style={styles.contentContainer}>
                       <Image
                         style={styles.mainImage}
-                        source={{ uri }}
+                        source={{ uri: url }}
                         resizeMode="contain"
                       />
                     </View>
@@ -258,7 +276,7 @@ const App = () => {
           />
           <CommentDrawer
             visible={isCommentDrawerVisible}
-            postId={visiblePost?.data.id}
+            postId={visiblePost?.id}
             // These 2 are ridiculous. Add redux asap.
             accessToken={accessToken}
             subredditUrl={currentSubredditUrl}

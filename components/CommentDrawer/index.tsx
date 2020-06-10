@@ -9,7 +9,7 @@ import chevronIcon from 'assets/icons/png/24/arrows/chevron-bottom.png';
 
 interface CommentDrawerProps {
   visible: boolean;
-  postId: string;
+  postId?: string;
   subredditUrl: string;
   accessToken: string;
   onClose?: () => void;
@@ -23,7 +23,7 @@ const CommentDrawer = ({
   onClose,
 }: CommentDrawerProps) => {
   const [comments, setComments] = useState<{
-    comments: any;
+    comments: any[];
   }>({
     comments: [],
   });
@@ -42,7 +42,7 @@ const CommentDrawer = ({
         },
       );
       // TODO: These responses aren't super pleasant to work with. Make adapter.
-      // TODO: Type def the response, particularly subreddits
+      // TODO: Type def the response.
       const [_, commentResponse] = await res.json();
 
       setComments({
