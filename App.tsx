@@ -22,11 +22,13 @@ import base64 from 'base-64';
 import Text from 'components/Text';
 import FloatingView from 'components/FloatingView';
 import SubredditSelector from 'components/SubredditSelector';
+import CommentDrawer from 'components/CommentDrawer';
 
 import { password, username, basicAuthPair } from './credentials';
 
 // TODO: Fix linting - thinks this cannot be resolved
 import userIcon from 'assets/icons/png/24/basic/user.png';
+import commentTextIcon from 'assets/icons/png/24/chatting/comment-text.png';
 
 import styles from './styles';
 
@@ -45,6 +47,7 @@ const App = () => {
     count?: number;
   }>(initialPostDataState);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [isCommentDrawerVisible, setIsCommentDrawerVisible] = useState(false);
   const [subredditData, setSubredditData] = useState<{
     subreddits: any[];
     before?: string;
@@ -136,7 +139,7 @@ const App = () => {
       } = await res.json();
 
       setSubredditData((currentSubredditData) => ({
-        subreddits: currentSubredditData.subreddits,
+        subreddits: children,
         before,
         after,
         count: currentSubredditData?.count + children.length ?? 0,
@@ -235,6 +238,13 @@ const App = () => {
             onViewableItemsChanged={onViewableItemsChanged.current}
             viewabilityConfig={viewabilityConfig.current}
           />
+          <View style={styles.footerContainer}>
+            <TouchableOpacity onPress={() => setIsCommentDrawerVisible(true)}>
+              <FloatingView>
+                <Image style={styles.icon} source={commentTextIcon} />
+              </FloatingView>
+            </TouchableOpacity>
+          </View>
           <SubredditSelector
             visible={isDropdownVisible}
             subreddits={subredditData?.subreddits}
@@ -245,6 +255,14 @@ const App = () => {
               setCurrentSubredditUrl(subreddit.data.url);
               setIsDropdownVisible(false);
             }}
+          />
+          <CommentDrawer
+            visible={isCommentDrawerVisible}
+            postId={visiblePost?.data.id}
+            // These 2 are ridiculous. Add redux asap.
+            accessToken={accessToken}
+            subredditUrl={currentSubredditUrl}
+            onClose={() => setIsCommentDrawerVisible(false)}
           />
         </View>
       </View>

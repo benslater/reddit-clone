@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import { offWhite, black } from 'constants/styles';
+import { offWhite, black, borderRadius } from 'constants/styles';
 
 export default StyleSheet.create({
   view: {
@@ -14,7 +14,7 @@ export default StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
     elevation: 2,
-    borderRadius: 10,
+    borderRadius: borderRadius,
     // TODO: Maybe this shouldn't have opinions about padding?
     // How commonly do children need to take up full space e.g. background color?
     padding: 10,

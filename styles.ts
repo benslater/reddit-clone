@@ -35,4 +35,16 @@ export default StyleSheet.create({
   },
   mainImage: { ...StyleSheet.absoluteFillObject },
   subredditDropdownText: { fontSize: 24, textAlign: 'center' },
+  footerContainer: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 0,
+    paddingRight: 20,
+    paddingBottom: 20,
+    paddingLeft: 20,
+    zIndex: 100,
+  },
 });
