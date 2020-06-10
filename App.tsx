@@ -52,9 +52,7 @@ const App = () => {
     count?: number;
   }>(initialSubredditsState);
   const [visiblePost, setVisiblePost] = useState<any | null>(null);
-  const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string>(
-    '/r/all/',
-  );
+  const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string>('/');
 
   const viewabilityConfig = useRef({
     viewAreaCoveragePercentThreshold: 100,
@@ -123,11 +121,14 @@ const App = () => {
       if (!accessToken) {
         return;
       }
-      const res = await fetch('https://oauth.reddit.com/subreddits/default', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+      const res = await fetch(
+        'https://oauth.reddit.com/subreddits/mine/subscriber',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         },
-      });
+      );
       // TODO: These responses aren't super pleasant to work with. Make adapter.
       // TODO: Type def the response, particularly subreddits
       const {
@@ -135,7 +136,7 @@ const App = () => {
       } = await res.json();
 
       setSubredditData((currentSubredditData) => ({
-        subreddits: [...(currentSubredditData?.subreddits ?? []), ...children],
+        subreddits: currentSubredditData.subreddits,
         before,
         after,
         count: currentSubredditData?.count + children.length ?? 0,

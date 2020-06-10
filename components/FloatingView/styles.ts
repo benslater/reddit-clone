@@ -15,6 +15,8 @@ export default StyleSheet.create({
     shadowRadius: 1.41,
     elevation: 2,
     borderRadius: 10,
+    // TODO: Maybe this shouldn't have opinions about padding?
+    // How commonly do children need to take up full space e.g. background color?
     padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
