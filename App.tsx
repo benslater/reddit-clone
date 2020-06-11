@@ -276,7 +276,7 @@ const App = () => {
           />
           <CommentDrawer
             visible={isCommentDrawerVisible}
-            postId={visiblePost?.id}
+            postId={visiblePost?.data.id}
             // These 2 are ridiculous. Add redux asap.
             accessToken={accessToken}
             subredditUrl={currentSubredditUrl}
