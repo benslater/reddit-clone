@@ -79,6 +79,7 @@ const fetchSubredditContent = async (
   return await res.json();
 };
 
+// TODO: Split out to separate file.
 const AppContainer = () => (
   <Provider store={store}>
     <ConnectedApp />
