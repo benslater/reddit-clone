@@ -16,9 +16,9 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
-  ImageBackground,
 } from 'react-native';
 import base64 from 'base-64';
+import queryStringify from 'qs-stringify';
 
 import Text from 'components/Text';
 import FloatingView from 'components/FloatingView';
@@ -27,7 +27,6 @@ import CommentDrawer from 'components/CommentDrawer';
 
 import { password, username, basicAuthPair } from './credentials';
 
-// TODO: Fix linting - thinks this cannot be resolved
 import userIcon from 'assets/icons/png/24/basic/user.png';
 import commentTextIcon from 'assets/icons/png/24/chatting/comment-text.png';
 
@@ -51,6 +50,25 @@ const initialPostDataState: RedditResponseDataState<RedditPost> = {
 const initialSubredditsState: RedditResponseDataState<RedditSubreddit> = {
   listing: { kind: null, data: null },
   count: 0,
+};
+
+const fetchSubredditContent = async (
+  accessToken: string,
+  subredditUrl: string,
+  params: Record<string, any> = {},
+): Promise<RedditListingResponse<RedditPost>> => {
+  const res = await fetch(
+    `https://oauth.reddit.com${subredditUrl}hot?g=gb&raw_json=1&limit=2&${queryStringify(
+      params,
+    )}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+  // TODO: These responses aren't super pleasant to work with. Make adapter.
+  return await res.json();
 };
 
 const App = () => {
@@ -101,21 +119,24 @@ const App = () => {
         return;
       }
 
-      const fetchSubredditContent = async (): Promise<
-        RedditListingResponse<RedditPost>
-      > => {
-        const res = await fetch(
-          `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1&limit=2`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
-        // TODO: These responses aren't super pleasant to work with. Make adapter.
-        return await res.json();
-      };
-      const listing = await fetchSubredditContent();
+      // const fetchSubredditContent = async (): Promise<
+      //   RedditListingResponse<RedditPost>
+      // > => {
+      //   const res = await fetch(
+      //     `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1`,
+      //     {
+      //       headers: {
+      //         Authorization: `Bearer ${accessToken}`,
+      //       },
+      //     },
+      //   );
+      //   // TODO: These responses aren't super pleasant to work with. Make adapter.
+      //   return await res.json();
+      // };
+      const listing = await fetchSubredditContent(
+        accessToken,
+        currentSubredditUrl,
+      );
 
       setPostData((currentPostData) => ({
         listing,
@@ -162,25 +183,22 @@ const App = () => {
     getSubreddits();
   }, [accessToken]);
 
-  // TODO: One of the effect hooks sort of duplicates this. Could probably be parameterized.
   const getNextItems = async () => {
-    const fetchSubredditContent = async (): Promise<
-      RedditListingResponse<RedditPost>
-    > => {
-      const res = await fetch(
-        `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&after=${postData.listing.data?.after}&raw_json=1&limit=2`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
-      // TODO: These responses aren't super pleasant to work with. Make adapter.
-      return await res.json();
-    };
-    const listing = await fetchSubredditContent();
+    // TODO: Deal with no access token more appropriately.
+    if (!accessToken) {
+      return;
+    }
+
+    const listing = await fetchSubredditContent(
+      accessToken,
+      currentSubredditUrl,
+      {
+        after: postData.listing.data?.after,
+      },
+    );
 
     if (!postData.listing.data) {
+      // Should never happen...
       throw new Error('No existing post data');
     }
     if (!listing.data) {
