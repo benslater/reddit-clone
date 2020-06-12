@@ -1,9 +1,9 @@
-export interface RedditListingResponse {
+export interface RedditListingResponse<T extends RedditPost | RedditSubreddit> {
   kind: 'Listing' | null;
   data: {
     modhash: null;
     dist: number;
-    children: RedditPost[];
+    children: T[];
     after: null | string;
     before: null | string;
   } | null;
@@ -76,4 +76,85 @@ export interface RedditPost {
     is_video: boolean;
     post_hint: string;
   };
+}
+
+export interface RedditSubreddit {
+  submit_text_html: string;
+  restrict_posting: boolean;
+  user_is_banned: boolean;
+  free_form_reports: boolean;
+  wiki_enabled: boolean;
+  user_is_muted: boolean;
+  display_name: string;
+  header_img: string;
+  title: string;
+  icon_size: number[];
+  primary_color: string;
+  icon_img: string;
+  display_name_prefixed: string;
+  public_traffic: boolean;
+  subscribers: number;
+  videostream_links_count: number;
+  name: string;
+  quarantine: boolean;
+  hide_ads: boolean;
+  emojis_enabled: boolean;
+  advertiser_category: '';
+  public_description: string;
+  comment_score_hide_mins: number;
+  user_has_favorited: boolean;
+  community_icon: string;
+  banner_background_image: string;
+  original_content_tag_enabled: boolean;
+  submit_text: string;
+  description_html: string;
+  spoilers_enabled: boolean;
+  header_title: string;
+  header_size: number[];
+  user_flair_position: string;
+  all_original_content: boolean;
+  has_menu_widget: boolean;
+  key_color: string;
+  can_assign_user_flair: boolean;
+  created: number;
+  wls: number;
+  show_media_preview: boolean;
+  submission_type: string;
+  user_is_subscriber: boolean;
+  disable_contributor_requests: boolean;
+  allow_videogifs: boolean;
+  user_flair_type: string;
+  allow_polls: boolean;
+  collapse_deleted_comments: boolean;
+  emojis_custom_size: number[];
+  public_description_html: string;
+  allow_videos: boolean;
+  is_crosspostable_subreddit: boolean;
+  notification_level: string;
+  can_assign_link_flair: boolean;
+  accounts_active_is_fuzzed: boolean;
+  submit_text_label: string;
+  link_flair_position: string;
+  user_flair_enabled_in_sr: boolean;
+  allow_discovery: boolean;
+  user_sr_theme_enabled: boolean;
+  link_flair_enabled: boolean;
+  subreddit_type: string;
+  banner_img: string;
+  banner_background_color: string;
+  show_media: boolean;
+  id: string;
+  user_is_moderator: boolean;
+  over18: boolean;
+  description: string;
+  submit_link_label: string;
+  restrict_commenting: boolean;
+  allow_images: boolean;
+  lang: string;
+  whitelist_status: string;
+  url: string;
+  created_utc: number;
+  banner_size: number[];
+  mobile_banner_image: string;
+  user_is_contributor: boolean;
 }

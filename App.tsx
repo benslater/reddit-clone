@@ -16,6 +16,7 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  ImageBackground,
 } from 'react-native';
 import base64 from 'base-64';
 
@@ -31,21 +32,26 @@ import userIcon from 'assets/icons/png/24/basic/user.png';
 import commentTextIcon from 'assets/icons/png/24/chatting/comment-text.png';
 
 import styles from './styles';
-import { RedditListingResponse, RedditPost } from 'types';
+import { RedditListingResponse, RedditPost, RedditSubreddit } from 'types';
 
 declare const global: { HermesInternal: null | {} };
 
-const initialPostDataState: {
-  listing: RedditListingResponse;
+interface RedditResponseDataState<T extends RedditPost | RedditSubreddit> {
+  listing: RedditListingResponse<T>;
   count: number;
-} = {
+}
+
+const initialPostDataState: RedditResponseDataState<RedditPost> = {
   listing: {
     kind: null,
     data: null,
   },
   count: 0,
 };
-const initialSubredditsState = { subreddits: [] };
+const initialSubredditsState: RedditResponseDataState<RedditSubreddit> = {
+  listing: { kind: null, data: null },
+  count: 0,
+};
 
 const App = () => {
   // TODO: Getting unweildy, redux soon.
@@ -55,12 +61,9 @@ const App = () => {
   );
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [isCommentDrawerVisible, setIsCommentDrawerVisible] = useState(false);
-  const [subredditData, setSubredditData] = useState<{
-    subreddits: any[];
-    before?: string;
-    after?: string;
-    count?: number;
-  }>(initialSubredditsState);
+  const [subredditData, setSubredditData] = useState<
+    typeof initialSubredditsState
+  >(initialSubredditsState);
   const [visiblePost, setVisiblePost] = useState<RedditPost | null>(null);
   const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string>('/');
 
@@ -99,10 +102,10 @@ const App = () => {
       }
 
       const fetchSubredditContent = async (): Promise<
-        RedditListingResponse
+        RedditListingResponse<RedditPost>
       > => {
         const res = await fetch(
-          `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1`,
+          `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1&limit=2`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -113,8 +116,6 @@ const App = () => {
         return await res.json();
       };
       const listing = await fetchSubredditContent();
-
-      console.log(listing);
 
       setPostData((currentPostData) => ({
         listing,
@@ -133,25 +134,28 @@ const App = () => {
       if (!accessToken) {
         return;
       }
-      const res = await fetch(
-        'https://oauth.reddit.com/subreddits/mine/subscriber',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
+
+      const fetchSubreddits = async (): Promise<
+        RedditListingResponse<RedditSubreddit>
+      > => {
+        const res = await fetch(
+          'https://oauth.reddit.com/subreddits/mine/subscriber?raw_json=1',
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
           },
-        },
-      );
-      // TODO: These responses aren't super pleasant to work with. Make adapter.
-      // TODO: Type def the response, particularly subreddits
-      const {
-        data: { children, before, after },
-      } = await res.json();
+        );
+        // TODO: These responses aren't super pleasant to work with. Make adapter.
+        return await res.json();
+      };
+
+      const listing = await fetchSubreddits();
 
       setSubredditData((currentSubredditData) => ({
-        subreddits: children,
-        before,
-        after,
-        count: currentSubredditData?.count + children.length ?? 0,
+        listing,
+        count:
+          currentSubredditData?.count + (listing.data?.children.length ?? 0),
       }));
     };
 
@@ -160,9 +164,11 @@ const App = () => {
 
   // TODO: One of the effect hooks sort of duplicates this. Could probably be parameterized.
   const getNextItems = async () => {
-    const fetchSubredditContent = async (): Promise<RedditListingResponse> => {
+    const fetchSubredditContent = async (): Promise<
+      RedditListingResponse<RedditPost>
+    > => {
       const res = await fetch(
-        `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&raw_json=1`,
+        `https://oauth.reddit.com${currentSubredditUrl}hot?g=gb&after=${postData.listing.data?.after}&raw_json=1&limit=2`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -172,19 +178,31 @@ const App = () => {
       // TODO: These responses aren't super pleasant to work with. Make adapter.
       return await res.json();
     };
-    const { data: fetchedData } = await fetchSubredditContent();
+    const listing = await fetchSubredditContent();
 
-    setPostData((currentPostData) => ({
+    if (!postData.listing.data) {
+      throw new Error('No existing post data');
+    }
+    if (!listing.data) {
+      throw new Error('Could not fetch subreddit content');
+    }
+
+    setPostData({
       listing: {
-        ...currentPostData.listing,
-        data: currentPostData.listing.data
-          ? { ...currentPostData.listing.data, ...fetchedData }
-          : null,
+        ...listing,
+        data: {
+          ...listing.data,
+          children: [
+            ...postData.listing.data.children,
+            ...listing.data.children,
+          ],
+        },
       },
       count: 0,
-    }));
+    });
   };
 
+  // TODO: Why does this code block always run on Android until connected to debugger?
   if (!accessToken) {
     // TODO: Simple solution, replace with something Lottie-based
     return <ActivityIndicator style={styles.fullscreen} />;
@@ -209,12 +227,19 @@ const App = () => {
                 <Text>{visiblePost.data.title}</Text>
               </FloatingView>
             )}
-            <TouchableOpacity
-              onPress={() => setIsDropdownVisible(!isDropdownVisible)}>
-              <FloatingView>
-                <Text style={styles.subredditDropdownText}>/r/</Text>
-              </FloatingView>
-            </TouchableOpacity>
+
+            <SubredditSelector
+              open={isDropdownVisible}
+              toggleOpen={() => setIsDropdownVisible(!isDropdownVisible)}
+              subreddits={subredditData?.listing.data?.children}
+              selectedSubreddit={currentSubredditUrl}
+              onSelect={(subreddit) => {
+                setVisiblePost(null);
+                setPostData(initialPostDataState);
+                setCurrentSubredditUrl(subreddit.data.url);
+                setIsDropdownVisible(false);
+              }}
+            />
           </View>
           <FlatList
             horizontal
@@ -263,17 +288,6 @@ const App = () => {
               </FloatingView>
             </TouchableOpacity>
           </View>
-          <SubredditSelector
-            visible={isDropdownVisible}
-            subreddits={subredditData?.subreddits}
-            selectedSubreddit={currentSubredditUrl}
-            onSelect={(subreddit) => {
-              setVisiblePost(null);
-              setPostData(initialPostDataState);
-              setCurrentSubredditUrl(subreddit.data.url);
-              setIsDropdownVisible(false);
-            }}
-          />
           <CommentDrawer
             visible={isCommentDrawerVisible}
             postId={visiblePost?.data.id}

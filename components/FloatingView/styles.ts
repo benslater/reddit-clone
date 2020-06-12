@@ -1,11 +1,11 @@
 import { StyleSheet } from 'react-native';
 
-import { offWhite, black, borderRadius } from 'constants/styles';
+import { offWhite, black, borderRadius, opacity } from 'constants/styles';
 
 export default StyleSheet.create({
   view: {
     backgroundColor: offWhite,
-    opacity: 0.8,
+    opacity,
     shadowColor: black,
     shadowOffset: {
       width: 0,
@@ -15,10 +15,10 @@ export default StyleSheet.create({
     shadowRadius: 1.41,
     elevation: 2,
     borderRadius: borderRadius,
-    // TODO: Maybe this shouldn't have opinions about padding?
-    // How commonly do children need to take up full space e.g. background color?
-    padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  padded: {
+    padding: 10,
   },
 });
