@@ -34,8 +34,10 @@ import userIcon from 'assets/icons/png/24/basic/user.png';
 import commentTextIcon from 'assets/icons/png/24/chatting/comment-text.png';
 
 import { setAccessTokenActionCreator } from 'actions/global';
+import { useFetchListing } from 'hooks/useFetchListing';
 
 import { RedditListingResponse, RedditPost, RedditSubreddit } from 'types';
+
 import styles from './styles';
 
 declare const global: { HermesInternal: null | {} };
@@ -50,10 +52,6 @@ const initialPostDataState: RedditResponseDataState<RedditPost> = {
     kind: null,
     data: null,
   },
-  count: 0,
-};
-const initialSubredditsState: RedditResponseDataState<RedditSubreddit> = {
-  listing: { kind: null, data: null },
   count: 0,
 };
 
@@ -85,9 +83,6 @@ const App = ({ accessToken, setAccessToken }: AppProps) => {
   );
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [isCommentDrawerVisible, setIsCommentDrawerVisible] = useState(false);
-  const [subredditData, setSubredditData] = useState<
-    typeof initialSubredditsState
-  >(initialSubredditsState);
   const [visiblePost, setVisiblePost] = useState<RedditPost | null>(null);
   const [currentSubredditUrl, setCurrentSubredditUrl] = useState<string>('/');
 
@@ -142,38 +137,10 @@ const App = ({ accessToken, setAccessToken }: AppProps) => {
     getSubredditContent();
   }, [currentSubredditUrl, accessToken]);
 
-  useEffect(() => {
-    const getSubreddits = async () => {
-      if (!accessToken) {
-        return;
-      }
-
-      const fetchSubreddits = async (): Promise<
-        RedditListingResponse<RedditSubreddit>
-      > => {
-        const res = await fetch(
-          'https://oauth.reddit.com/subreddits/mine/subscriber?raw_json=1',
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
-        // TODO: These responses aren't super pleasant to work with. Make adapter.
-        return await res.json();
-      };
-
-      const listing = await fetchSubreddits();
-
-      setSubredditData((currentSubredditData) => ({
-        listing,
-        count:
-          currentSubredditData?.count + (listing.data?.children.length ?? 0),
-      }));
-    };
-
-    getSubreddits();
-  }, [accessToken]);
+  const { listingState: subredditData } = useFetchListing<RedditSubreddit>(
+    accessToken,
+    'https://oauth.reddit.com/subreddits/mine/subscriber?raw_json=1',
+  );
 
   const getNextItems = async () => {
     // TODO: Deal with no access token more appropriately.

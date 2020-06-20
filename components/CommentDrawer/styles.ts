@@ -3,6 +3,8 @@ import { offWhite, borderRadius } from 'constants/styles';
 
 export default StyleSheet.create({
   commentDrawer: {
+    position: 'absolute',
+    bottom: 0,
     zIndex: 200,
     opacity: 1,
     height: '90%',
