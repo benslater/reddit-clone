@@ -16,7 +16,7 @@
     "base-64": "^0.1.0",
     "qs-stringify": "^1.2.1",
     "react": "16.11.0",
-    "react-native": "0.62.2",
+    "react-native": "0.62.3",
     "react-native-webview": "^10.2.3",
     "react-redux": "^7.2.0",
     "redux": "^4.0.5",
